@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Database } from "@/lib/database.types"
 import { createClient } from "@/lib/supabase/client"
-import { User } from "@supabase/supabase-js"
+import type { SupabaseClient, User as SupabaseUser } from "@supabase/supabase-js"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
 import {
@@ -26,7 +26,8 @@ import {
   Clock,
   MapPin,
   MessageCircle,
-  Send
+  Send,
+  User,
 } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -45,13 +46,13 @@ type Message = Database["public"]["Tables"]["messages"]["Row"] & {
 export default function RequestDetailPage() {
   const params = useParams()
   const requestId = params.id as string
-  const supabase = createClient()
+  const supabase: SupabaseClient<Database> = createClient()
   const router = useRouter()
 
   const [request, setRequest] = useState<RequestDetails | null>(null)
   const [proposals, setProposals] = useState<Proposal[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
 
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false)
   const [chatDialogOpen, setChatDialogOpen] = useState(false)
@@ -82,7 +83,7 @@ export default function RequestDetailPage() {
       const { data: requestData, error: requestError } = await supabase
         .from("requests")
         .select(`*, profiles ( username )`)
-        .eq("id", requestId)
+        .eq("id", Number(requestId))
         .single()
 
       if (requestError || !requestData) {
@@ -95,7 +96,7 @@ export default function RequestDetailPage() {
       const { data: proposalsData, error: proposalsError } = await supabase
         .from("proposals")
         .select(`*, profiles ( username )`)
-        .eq("request_id", requestId)
+        .eq("request_id", Number(requestId))
         .order("created_at", { ascending: true })
 
       if (proposalsError) {
@@ -181,11 +182,15 @@ export default function RequestDetailPage() {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedProposal || !user) return
 
-    const { error } = await supabase.from("messages").insert({
+    const messageToInsert: Database["public"]["Tables"]["messages"]["Insert"] = {
       proposal_id: selectedProposal.id,
       sender_id: user.id,
       message: newMessage,
-    })
+    }
+
+    const { error } = await supabase
+      .from("messages")
+      .insert([messageToInsert])
 
     if (error) {
       alert("메시지 전송에 실패했습니다.")
@@ -210,15 +215,17 @@ export default function RequestDetailPage() {
       return
     }
 
+    const proposalToInsert: Database["public"]["Tables"]["proposals"]["Insert"] = {
+      request_id: Number(requestId),
+      provider_id: user.id,
+      message: proposalMessage,
+      price: proposalPrice,
+      contact: proposalContact,
+    }
+
     const { data: newProposal, error } = await supabase
       .from("proposals")
-      .insert({
-        request_id: Number(requestId),
-        provider_id: user.id,
-        message: proposalMessage,
-        price: proposalPrice,
-        contact: proposalContact,
-      })
+      .insert([proposalToInsert])
       .select(`*, profiles ( username )`)
       .single()
 
@@ -523,8 +530,8 @@ export default function RequestDetailPage() {
                       </div>
                       <div
                         className={`rounded-lg px-4 py-3 ${msg.sender_id === user?.id
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-border bg-background"
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border bg-background"
                           }`}
                       >
                         <p className="text-sm">{msg.message}</p>

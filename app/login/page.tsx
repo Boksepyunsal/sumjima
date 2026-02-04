@@ -3,46 +3,20 @@
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
 
 export default function LoginPage() {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [isSignUp, setIsSignUp] = useState(false)
     const supabase = createClient()
-    const router = useRouter()
 
-    const handleAuth = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (isSignUp) {
-            // Sign up
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    emailRedirectTo: `${location.origin}/auth/callback`,
-                },
-            })
-            if (error) {
-                alert(error.message)
-            } else {
-                alert("회원가입이 완료되었습니다. 이메일을 확인하여 계정을 활성화해주세요.")
-            }
-        } else {
-            // Sign in
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            })
-            if (error) {
-                alert(error.message)
-            } else {
-                router.push("/requests")
-            }
+    const handleKakaoLogin = async () => {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: "kakao",
+            options: {
+                redirectTo: `${location.origin}/auth/callback`,
+            },
+        })
+        if (error) {
+            alert(error.message)
         }
     }
 
@@ -50,56 +24,34 @@ export default function LoginPage() {
         <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex flex-1 items-center justify-center bg-muted/30 px-4">
-                <div className="w-full max-w-sm">
-                    <form
-                        onSubmit={handleAuth}
-                        className="rounded-lg border border-border bg-background p-6 md:p-8 space-y-6"
-                    >
-                        <div className="space-y-2 text-center">
-                            <h1 className="text-2xl font-bold">{isSignUp ? "회원가입" : "로그인"}</h1>
+                <div className="w-full max-w-sm text-center">
+                    <div className="rounded-lg border border-border bg-background p-6 md:p-8 space-y-6">
+                        <div className="space-y-2">
+                            <h1 className="text-2xl font-bold">로그인</h1>
                             <p className="text-muted-foreground">
-                                {isSignUp
-                                    ? "계정을 만들어 숨지마를 시작하세요."
-                                    : "이메일과 비밀번호로 로그인하세요."}
+                                카카오 계정으로 간편하게 로그인하고
+                                <br />
+                                숨지마의 모든 서비스를 이용해보세요.
                             </p>
                         </div>
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">이메일</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="m@example.com"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="password">비밀번호</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <Button type="submit" className="w-full">
-                            {isSignUp ? "회원가입" : "로그인"}
-                        </Button>
-                        <div className="text-center text-sm">
-                            {isSignUp ? "이미 계정이 있으신가요?" : "계정이 없으신가요?"}
-                            <Button
-                                variant="link"
-                                type="button"
-                                onClick={() => setIsSignUp(!isSignUp)}
+                        <Button
+                            onClick={handleKakaoLogin}
+                            className="w-full bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
+                        >
+                            <svg
+                                role="img"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="mr-2 h-5 w-5"
                             >
-                                {isSignUp ? "로그인" : "회원가입"}
-                            </Button>
-                        </div>
-                    </form>
+                                <path
+                                    d="M12 2C6.477 2 2 5.818 2 10.227c0 2.454.983 4.69 2.607 6.386-.196 1.038-.586 2.64-1.498 3.715-.14.163-.055.41.14.47.197.062.41-.023.47-.222.586-1.74 1.83-3.06 2.2-3.372C7.146 17.738 9.44 18.455 12 18.455c5.523 0 10-3.818 10-8.228C22 5.818 17.523 2 12 2z"
+                                    fill="#181600"
+                                />
+                            </svg>
+                            카카오로 1초만에 시작하기
+                        </Button>
+                    </div>
                 </div>
             </main>
             <Footer />

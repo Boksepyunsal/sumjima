@@ -1,7 +1,7 @@
 "use client"
 
 import { createClient } from "@/lib/supabase/client"
-import type { User } from "@supabase/supabase-js"
+import type { SupabaseClient, User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
 import React, { useEffect } from "react"
 
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Database } from "@/lib/database.types"
 import { useState } from "react"
 
 export default function NewRequestPage() {
@@ -26,7 +27,7 @@ export default function NewRequestPage() {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [user, setUser] = useState<User | null>(null)
-  const supabase = createClient()
+  const supabase: SupabaseClient<Database> = createClient()
   const router = useRouter()
 
   useEffect(() => {
@@ -61,9 +62,12 @@ export default function NewRequestPage() {
       return
     }
 
+    const requestToInsert: Database["public"]["Tables"]["requests"]["Insert"] =
+      { title, description, category, region, author_id: user.id }
+
     const { error } = await supabase
       .from("requests")
-      .insert([{ title, description, category, region, author_id: user.id }])
+      .insert([requestToInsert])
 
     if (error) {
       console.error("Error creating request:", error)
@@ -99,12 +103,12 @@ export default function NewRequestPage() {
                     <SelectValue placeholder="카테고리 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="moving">이사/용달</SelectItem>
-                    <SelectItem value="cleaning">청소</SelectItem>
-                    <SelectItem value="repair">수리/설치</SelectItem>
-                    <SelectItem value="interior">인테리어</SelectItem>
-                    <SelectItem value="demolition">철거</SelectItem>
-                    <SelectItem value="other">기타</SelectItem>
+                    <SelectItem value="이사/용달">이사/용달</SelectItem>
+                    <SelectItem value="청소">청소</SelectItem>
+                    <SelectItem value="수리/설치">수리/설치</SelectItem>
+                    <SelectItem value="인테리어">인테리어</SelectItem>
+                    <SelectItem value="철거">철거</SelectItem>
+                    <SelectItem value="기타">기타</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -119,16 +123,16 @@ export default function NewRequestPage() {
                     <SelectValue placeholder="지역 선택 (시/구)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="seoul-mapo">서울 마포구</SelectItem>
-                    <SelectItem value="seoul-gangnam">서울 강남구</SelectItem>
-                    <SelectItem value="seoul-seocho">서울 서초구</SelectItem>
-                    <SelectItem value="seoul-songpa">서울 송파구</SelectItem>
-                    <SelectItem value="seoul-jongno">서울 종로구</SelectItem>
-                    <SelectItem value="seoul-yongsan">서울 용산구</SelectItem>
-                    <SelectItem value="seoul-other">서울 기타</SelectItem>
-                    <SelectItem value="gyeonggi">경기도</SelectItem>
-                    <SelectItem value="incheon">인천</SelectItem>
-                    <SelectItem value="other">기타 지역</SelectItem>
+                    <SelectItem value="서울 마포구">서울 마포구</SelectItem>
+                    <SelectItem value="서울 강남구">서울 강남구</SelectItem>
+                    <SelectItem value="서울 서초구">서울 서초구</SelectItem>
+                    <SelectItem value="서울 송파구">서울 송파구</SelectItem>
+                    <SelectItem value="서울 종로구">서울 종로구</SelectItem>
+                    <SelectItem value="서울 용산구">서울 용산구</SelectItem>
+                    <SelectItem value="서울 기타">서울 기타</SelectItem>
+                    <SelectItem value="경기도">경기도</SelectItem>
+                    <SelectItem value="인천">인천</SelectItem>
+                    <SelectItem value="기타 지역">기타 지역</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

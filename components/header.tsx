@@ -11,22 +11,29 @@ import { useEffect, useState } from "react"
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<{ username: string | null } | null>(
+    null
+  )
   const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-    }
-    getUser()
-
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user ?? null
+      setUser(user)
+
+      if (user) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", user.id)
+          .single()
+        setProfile(profileData)
+      } else {
+        setProfile(null)
+      }
       router.refresh()
     })
 
@@ -67,7 +74,9 @@ export function Header() {
           </Link>
           {user ? (
             <>
-              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <span className="text-sm text-muted-foreground">
+                {profile?.username ?? user.email}
+              </span>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 로그아웃
