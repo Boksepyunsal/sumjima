@@ -1,14 +1,15 @@
 "use client"
 
-import React from "react"
+import { createClient } from "@/lib/supabase/client"
+import type { User } from "@supabase/supabase-js"
+import { useRouter } from "next/navigation"
+import React, { useEffect } from "react"
 
-import { useState } from "react"
-import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -16,17 +17,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { useState } from "react"
 
 export default function NewRequestPage() {
   const [category, setCategory] = useState("")
   const [region, setRegion] = useState("")
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+  const [user, setUser] = useState<User | null>(null)
+  const supabase = createClient()
+  const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    let ignore = false
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!ignore) {
+        if (!user) {
+          alert("로그인이 필요합니다.")
+          router.push("/login")
+        } else {
+          setUser(user)
+        }
+      }
+    }
+    getUser()
+    return () => {
+      ignore = true
+    }
+  }, [supabase, router])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log({ category, region, title, description })
+    if (!user) {
+      alert("로그인이 필요합니다.")
+      return
+    }
+    if (!category || !region || !title || !description) {
+      alert("모든 필드를 입력해주세요.")
+      return
+    }
+
+    const { error } = await supabase
+      .from("requests")
+      .insert([{ title, description, category, region, author_id: user.id }])
+
+    if (error) {
+      console.error("Error creating request:", error)
+      alert("요청서 등록에 실패했습니다.")
+    } else {
+      alert("요청서가 성공적으로 등록되었습니다.")
+      router.push("/requests")
+    }
   }
 
   return (

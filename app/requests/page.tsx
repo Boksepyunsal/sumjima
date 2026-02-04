@@ -1,13 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Input } from "@/components/ui/input"
+import { Header } from "@/components/header"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -15,65 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, MapPin, ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { Database } from "@/lib/database.types"
+import { createClient } from "@/lib/supabase/client"
+import { formatDistanceToNow } from "date-fns"
+import { ko } from "date-fns/locale"
+import { ChevronLeft, ChevronRight, MapPin, Plus, Search } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
-interface Request {
-  id: number
-  category: string
-  title: string
-  region: string
-  time: string
-  offers: number
-  status: "open" | "closed" | "matched"
+type Request = Database["public"]["Tables"]["requests"]["Row"] & {
+  proposals: [{ count: number }]
 }
-
-const mockRequests: Request[] = [
-  {
-    id: 1,
-    category: "이사/용달",
-    title: "마포구 원룸이사 용달 필요합니다",
-    region: "서울 마포구",
-    time: "10분 전",
-    offers: 0,
-    status: "open",
-  },
-  {
-    id: 2,
-    category: "청소",
-    title: "강남구 에어컨 청소 견적 문의 (시스템 에어컨 2대)",
-    region: "서울 강남구",
-    time: "30분 전",
-    offers: 3,
-    status: "open",
-  },
-  {
-    id: 3,
-    category: "이사/용달",
-    title: "서초구 포장이사 견적 요청, 사다리차 필요함",
-    region: "서울 서초구",
-    time: "1시간 전",
-    offers: 0,
-    status: "open",
-  },
-  {
-    id: 4,
-    category: "청소",
-    title: "송파구 입주청소 업체 구합니다 (34평 확장형)",
-    region: "서울 송파구",
-    time: "2시간 전",
-    offers: 0,
-    status: "matched",
-  },
-  {
-    id: 5,
-    category: "철거",
-    title: "홍대입구역 근처 인테리어 철거 견적 문의드립니다",
-    region: "서울 마포구",
-    time: "3시간 전",
-    offers: 5,
-    status: "open",
-  },
-]
 
 function getStatusBadge(status: Request["status"], offers: number) {
   switch (status) {
@@ -124,21 +74,50 @@ function getCategoryIcon(category: string) {
 }
 
 export default function RequestListPage() {
+  const [requests, setRequests] = useState<Request[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [regionFilter, setRegionFilter] = useState<string>("all")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const supabase = createClient()
 
-  const filteredRequests = mockRequests.filter((request) => {
-    const matchesSearch =
-      request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.region.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesRegion =
-      regionFilter === "all" || request.region.includes(regionFilter)
-    const matchesCategory =
-      categoryFilter === "all" || request.category === categoryFilter
+  useEffect(() => {
+    const fetchRequests = async () => {
+      setLoading(true)
+      let query = supabase.from("requests").select(
+        `
+        *,
+        proposals ( count )
+      `,
+        { count: "exact" }
+      )
 
-    return matchesSearch && matchesRegion && matchesCategory
-  })
+      if (categoryFilter !== "all") {
+        query = query.eq("category", categoryFilter)
+      }
+      if (regionFilter !== "all") {
+        query = query.like("region", `%${regionFilter}%`)
+      }
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter)
+      }
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,region.ilike.%${searchQuery}%`)
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: false })
+
+      if (error) {
+        console.error("Error fetching requests:", error)
+      } else {
+        setRequests(data as any) // The generated type for count is complex
+      }
+      setLoading(false)
+    }
+
+    fetchRequests()
+  }, [supabase, searchQuery, regionFilter, categoryFilter, statusFilter])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -192,7 +171,7 @@ export default function RequestListPage() {
               </SelectContent>
             </Select>
 
-            <Select defaultValue="all">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-auto min-w-[100px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -207,36 +186,46 @@ export default function RequestListPage() {
 
           {/* Request List */}
           <div className="space-y-3">
-            {filteredRequests.map((request) => (
-              <Link key={request.id} href={`/requests/${request.id}`}>
-                <Card className="cursor-pointer border-border bg-background p-4 transition-colors hover:border-muted-foreground/50">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-2">
-                      <h3 className="font-semibold text-foreground leading-snug">
-                        {request.title}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <span>{getCategoryIcon(request.category)}</span>
-                          {request.category}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {request.region}
-                        </span>
-                        <span>•</span>
-                        <span>{request.time}</span>
+            {loading ? (
+              <div className="py-12 text-center">
+                <p className="text-muted-foreground">요청 목록을 불러오는 중...</p>
+              </div>
+            ) : (
+              requests.map((request) => (
+                <Link key={request.id} href={`/requests/${request.id}`}>
+                  <Card className="cursor-pointer border-border bg-background p-4 transition-colors hover:border-muted-foreground/50">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 space-y-2">
+                        <h3 className="font-semibold text-foreground leading-snug">
+                          {request.title}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-1">
+                            <span>{getCategoryIcon(request.category)}</span>
+                            {request.category}
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {request.region}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {formatDistanceToNow(new Date(request.created_at), {
+                              addSuffix: true,
+                              locale: ko,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        {getStatusBadge(request.status as any, request.proposals[0]?.count || 0)}
                       </div>
                     </div>
-                    <div className="flex-shrink-0">
-                      {getStatusBadge(request.status, request.offers)}
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                  </Card>
+                </Link>
+              )))}
 
-            {filteredRequests.length === 0 && (
+            {!loading && requests.length === 0 && (
               <div className="py-12 text-center">
                 <p className="text-muted-foreground">No more requests</p>
               </div>

@@ -1,12 +1,42 @@
 "use client"
 
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu } from "lucide-react"
-import { useState } from "react"
+import { createClient } from "@/lib/supabase/client"
+import type { User } from "@supabase/supabase-js"
+import { LogOut, Menu } from "lucide-react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const supabase = createClient()
+  const router = useRouter()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      router.refresh()
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase, router])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push("/")
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -35,12 +65,22 @@ export function Header() {
           >
             요청 목록
           </Link>
-          <Link
-            href="/login"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            로그인
-          </Link>
+          {user ? (
+            <>
+              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                로그아웃
+              </Button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              로그인
+            </Link>
+          )}
           <Button asChild>
             <Link href="/requests/new">견적 요청하기</Link>
           </Button>
@@ -67,15 +107,23 @@ export function Header() {
             >
               요청 목록
             </Link>
-            <Link
-              href="/login"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              로그인
-            </Link>
+            {user ? (
+              <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
+                로그아웃
+              </Button>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                로그인
+              </Link>
+            )}
             <Button asChild className="w-full">
-              <Link href="/requests/new">견적 요청하기</Link>
+              <Link href="/requests/new" onClick={() => setMobileMenuOpen(false)}>
+                견적 요청하기
+              </Link>
             </Button>
           </div>
         </nav>

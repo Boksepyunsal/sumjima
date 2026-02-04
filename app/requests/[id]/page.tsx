@@ -1,15 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { useParams } from "next/navigation"
-import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { Header } from "@/components/header"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -18,193 +13,153 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Database } from "@/lib/database.types"
+import { createClient } from "@/lib/supabase/client"
+import { User } from "@supabase/supabase-js"
+import { formatDistanceToNow } from "date-fns"
+import { ko } from "date-fns/locale"
 import {
   ArrowLeft,
-  MapPin,
-  Clock,
-  Send,
-  MessageCircle,
   CheckCircle,
-  User,
+  Clock,
+  MapPin,
+  MessageCircle,
+  Send
 } from "lucide-react"
+import Link from "next/link"
+import { useParams, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
-// Mock data for the request
-const mockRequestDetails: Record<
-  string,
-  {
-    id: number
-    category: string
-    title: string
-    description: string
-    region: string
-    time: string
-    offers: number
-    status: "open" | "closed" | "matched"
-    author: string
-    createdAt: string
-  }
-> = {
-  "1": {
-    id: 1,
-    category: "이사/용달",
-    title: "마포구 원룸이사 용달 필요합니다",
-    description:
-      "마포구 서교동에서 홍대입구역 근처로 이사 예정입니다.\n\n- 원룸 (약 10평)\n- 가전: 냉장고, 세탁기, 에어컨\n- 가구: 침대, 책상, 옷장\n- 박스 약 15개 정도\n\n희망 일자: 다음 주 토요일\n오전 시간대 선호합니다.",
-    region: "서울 마포구",
-    time: "10분 전",
-    offers: 0,
-    status: "open",
-    author: "김철수",
-    createdAt: "2026-02-04",
-  },
-  "2": {
-    id: 2,
-    category: "청소",
-    title: "강남구 에어컨 청소 견적 문의 (시스템 에어컨 2대)",
-    description:
-      "강남구 역삼동 오피스텔입니다.\n\n시스템 에어컨 2대 분해 청소 원합니다.\n브랜드: LG 휘센\n\n평일 저녁이나 주말 가능합니다.",
-    region: "서울 강남구",
-    time: "30분 전",
-    offers: 3,
-    status: "open",
-    author: "이영희",
-    createdAt: "2026-02-04",
-  },
-  "3": {
-    id: 3,
-    category: "이사/용달",
-    title: "서초구 포장이사 견적 요청, 사다리차 필요함",
-    description:
-      "서초구 방배동 빌라 3층에서 같은 동네 아파트 12층으로 이사합니다.\n\n- 25평형 가구 전체\n- 사다리차 필수 (엘리베이터 없음)\n- 포장이사 원함\n\n희망일: 2월 중순",
-    region: "서울 서초구",
-    time: "1시간 전",
-    offers: 0,
-    status: "open",
-    author: "박민수",
-    createdAt: "2026-02-04",
-  },
-  "4": {
-    id: 4,
-    category: "청소",
-    title: "송파구 입주청소 업체 구합니다 (34평 확장형)",
-    description:
-      "송파구 잠실동 아파트 입주청소입니다.\n\n- 34평 확장형\n- 베란다 2개\n- 입주 전 전체 청소 원함\n\n입주일: 2월 15일",
-    region: "서울 송파구",
-    time: "2시간 전",
-    offers: 0,
-    status: "matched",
-    author: "최지은",
-    createdAt: "2026-02-04",
-  },
-  "5": {
-    id: 5,
-    category: "철거",
-    title: "홍대입구역 근처 인테리어 철거 견적 문의드립니다",
-    description:
-      "마포구 서교동 상가 인테리어 철거입니다.\n\n- 약 15평 규모\n- 기존 인테리어 전체 철거\n- 폐기물 처리 포함 원함\n\n급하지 않습니다. 견적 먼저 받아보고 싶습니다.",
-    region: "서울 마포구",
-    time: "3시간 전",
-    offers: 5,
-    status: "open",
-    author: "정호진",
-    createdAt: "2026-02-04",
-  },
+type RequestDetails = Database["public"]["Tables"]["requests"]["Row"] & {
+  profiles: { username: string | null } | null
 }
-
-// Mock proposals
-interface Proposal {
-  id: number
-  providerName: string
-  message: string
-  price: string
-  contact: string
-  createdAt: string
+type Proposal = Database["public"]["Tables"]["proposals"]["Row"] & {
+  profiles: { username: string | null } | null
 }
-
-const mockProposals: Record<string, Proposal[]> = {
-  "2": [
-    {
-      id: 1,
-      providerName: "클린마스터",
-      message:
-        "안녕하세요, 시스템 에어컨 전문 청소업체입니다. 분해 청소 후 항균 처리까지 해드립니다.",
-      price: "12만원 (2대)",
-      contact: "010-1234-5678",
-      createdAt: "20분 전",
-    },
-    {
-      id: 2,
-      providerName: "에어컨닥터",
-      message: "LG 휘센 전문입니다. 당일 예약 가능하고 청소 후 사진 전달드립니다.",
-      price: "10만원 (2대)",
-      contact: "카카오톡: aircon_doc",
-      createdAt: "25분 전",
-    },
-    {
-      id: 3,
-      providerName: "홈케어서비스",
-      message:
-        "경력 10년차 기사님이 직접 방문합니다. 친환경 세제 사용하며 아이가 있는 가정도 안심하고 이용하세요.",
-      price: "15만원 (2대, 항균코팅 포함)",
-      contact: "오픈채팅: homecare123",
-      createdAt: "28분 전",
-    },
-  ],
-  "5": [
-    {
-      id: 1,
-      providerName: "철거왕",
-      message: "상가 철거 전문업체입니다. 폐기물 처리 포함 견적입니다.",
-      price: "150만원",
-      contact: "010-9876-5432",
-      createdAt: "1시간 전",
-    },
-    {
-      id: 2,
-      providerName: "마포인테리어철거",
-      message:
-        "홍대 인근 단골 업체입니다. 깔끔하게 철거하고 청소까지 해드립니다.",
-      price: "130만원",
-      contact: "카카오톡: mapo_demo",
-      createdAt: "2시간 전",
-    },
-  ],
-}
-
-// Mock chat messages
-interface ChatMessage {
-  id: number
-  sender: "me" | "provider" | "system"
-  senderName: string
-  message: string
-  time: string
-  isProposal?: boolean
-  proposalData?: {
-    price: string
-    contact: string
-  }
+type Message = Database["public"]["Tables"]["messages"]["Row"] & {
+  profiles: { username: string | null } | null
 }
 
 export default function RequestDetailPage() {
   const params = useParams()
   const requestId = params.id as string
-  const request = mockRequestDetails[requestId]
+  const supabase = createClient()
+  const router = useRouter()
+
+  const [request, setRequest] = useState<RequestDetails | null>(null)
+  const [proposals, setProposals] = useState<Proposal[]>([])
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null)
 
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false)
   const [chatDialogOpen, setChatDialogOpen] = useState(false)
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null)
   const [newMessage, setNewMessage] = useState("")
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [chatMessages, setChatMessages] = useState<Message[]>([])
 
   // New proposal form state
   const [proposalMessage, setProposalMessage] = useState("")
   const [proposalPrice, setProposalPrice] = useState("")
   const [proposalContact, setProposalContact] = useState("")
-  const [mySubmittedProposal, setMySubmittedProposal] = useState<Proposal | null>(null)
-  const [myChatHistory, setMyChatHistory] = useState<Record<string, ChatMessage[]>>({})
 
-  const proposals = mockProposals[requestId] || []
-  const allProposals = mySubmittedProposal ? [...proposals, mySubmittedProposal] : proposals
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+  }, [supabase])
+
+  useEffect(() => {
+    if (!requestId) return
+
+    const fetchRequestData = async () => {
+      setLoading(true)
+      const { data: requestData, error: requestError } = await supabase
+        .from("requests")
+        .select(`*, profiles ( username )`)
+        .eq("id", requestId)
+        .single()
+
+      if (requestError || !requestData) {
+        console.error("Error fetching request:", requestError)
+        setRequest(null)
+      } else {
+        setRequest(requestData as RequestDetails)
+      }
+
+      const { data: proposalsData, error: proposalsError } = await supabase
+        .from("proposals")
+        .select(`*, profiles ( username )`)
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: true })
+
+      if (proposalsError) {
+        console.error("Error fetching proposals:", proposalsError)
+      } else {
+        setProposals(proposalsData as Proposal[])
+      }
+
+      setLoading(false)
+    }
+
+    fetchRequestData()
+  }, [requestId, supabase])
+
+  useEffect(() => {
+    if (!selectedProposal) return
+
+    const channel = supabase
+      .channel(`messages-for-proposal-${selectedProposal.id}`)
+      .on<Message>(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `proposal_id=eq.${selectedProposal.id}`,
+        },
+        async (payload) => {
+          const { data: profileData, error } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", payload.new.sender_id)
+            .single()
+
+          if (error) {
+            console.error("Error fetching profile for new message", error)
+            setChatMessages((prev) => [...prev, payload.new as Message])
+          } else {
+            const newMessage = {
+              ...payload.new,
+              profiles: profileData,
+            } as Message
+            setChatMessages((prev) => [...prev, newMessage])
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, selectedProposal])
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex flex-1 items-center justify-center">
+          <p className="text-muted-foreground">요청 정보를 불러오는 중...</p>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
 
   if (!request) {
     return (
@@ -223,120 +178,79 @@ export default function RequestDetailPage() {
     )
   }
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedProposal) return
-    const newMsg: ChatMessage = {
-      id: chatMessages.length + 1,
-      sender: "me",
-      senderName: "나",
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedProposal || !user) return
+
+    const { error } = await supabase.from("messages").insert({
+      proposal_id: selectedProposal.id,
+      sender_id: user.id,
       message: newMessage,
-      time: new Date().toLocaleTimeString("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    }
-    const updatedMessages = [...chatMessages, newMsg]
-    setChatMessages(updatedMessages)
-    
-    // Update chat history
-    setMyChatHistory((prev) => ({
-      ...prev,
-      [selectedProposal.id.toString()]: updatedMessages,
-    }))
-    
-    setNewMessage("")
-  }
-
-  const handleSubmitProposal = () => {
-    if (!proposalMessage.trim() || !proposalPrice.trim() || !proposalContact.trim()) return
-    
-    const now = new Date()
-    const timeString = now.toLocaleTimeString("ko-KR", {
-      hour: "2-digit",
-      minute: "2-digit",
     })
-    
-    // Create new proposal
-    const newProposal: Proposal = {
-      id: Date.now(),
-      providerName: "나 (서비스 제공자)",
-      message: proposalMessage,
-      price: proposalPrice,
-      contact: proposalContact,
-      createdAt: "방금 전",
+
+    if (error) {
+      alert("메시지 전송에 실패했습니다.")
+      console.error(error)
+    } else {
+      setNewMessage("")
     }
-    
-    // Create initial chat messages with proposal info
-    const proposalChatMessages: ChatMessage[] = [
-      {
-        id: 1,
-        sender: "system",
-        senderName: "시스템",
-        message: `${request.author}님에게 제안서를 보냈습니다.`,
-        time: timeString,
-      },
-      {
-        id: 2,
-        sender: "me",
-        senderName: "나",
-        message: proposalMessage,
-        time: timeString,
-        isProposal: true,
-        proposalData: {
-          price: proposalPrice,
-          contact: proposalContact,
-        },
-      },
-    ]
-    
-    setMySubmittedProposal(newProposal)
-    setMyChatHistory((prev) => ({
-      ...prev,
-      [newProposal.id.toString()]: proposalChatMessages,
-    }))
-    
-    // Close proposal dialog and open chat
-    setProposalDialogOpen(false)
-    setProposalMessage("")
-    setProposalPrice("")
-    setProposalContact("")
-    
-    // Auto-open chat with the new proposal
-    setSelectedProposal(newProposal)
-    setChatMessages(proposalChatMessages)
-    setChatDialogOpen(true)
   }
 
-  const openChat = (proposal: Proposal) => {
-    setSelectedProposal(proposal)
-    
-    // Load existing chat history or create initial messages for this proposal
-    const existingHistory = myChatHistory[proposal.id.toString()]
-    if (existingHistory) {
-      setChatMessages(existingHistory)
-    } else {
-      // For existing proposals (mock data), show initial greeting
-      const initialMessages: ChatMessage[] = [
-        {
-          id: 1,
-          sender: "provider",
-          senderName: proposal.providerName,
-          message: proposal.message,
-          time: proposal.createdAt,
-          isProposal: true,
-          proposalData: {
-            price: proposal.price,
-            contact: proposal.contact,
-          },
-        },
-      ]
-      setChatMessages(initialMessages)
-      setMyChatHistory((prev) => ({
-        ...prev,
-        [proposal.id.toString()]: initialMessages,
-      }))
+  const handleSubmitProposal = async () => {
+    if (
+      !proposalMessage.trim() ||
+      !proposalPrice.trim() ||
+      !proposalContact.trim()
+    ) {
+      alert("모든 필드를 입력해주세요.")
+      return
     }
-    
+    if (!user) {
+      alert("로그인이 필요합니다.")
+      router.push("/login")
+      return
+    }
+
+    const { data: newProposal, error } = await supabase
+      .from("proposals")
+      .insert({
+        request_id: Number(requestId),
+        provider_id: user.id,
+        message: proposalMessage,
+        price: proposalPrice,
+        contact: proposalContact,
+      })
+      .select(`*, profiles ( username )`)
+      .single()
+
+    if (error || !newProposal) {
+      alert("제안서 제출에 실패했습니다.")
+      console.error(error)
+    } else {
+      setProposals((prev) => [...prev, newProposal as Proposal])
+      setProposalDialogOpen(false)
+      setProposalMessage("")
+      setProposalPrice("")
+      setProposalContact("")
+      openChat(newProposal as Proposal)
+    }
+  }
+
+  const openChat = async (proposal: Proposal) => {
+    setSelectedProposal(proposal)
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select(`*, profiles ( username )`)
+      .eq("proposal_id", proposal.id)
+      .order("created_at", { ascending: true })
+
+    if (error) {
+      console.error("Error fetching messages", error)
+      setChatMessages([])
+    } else {
+      setChatMessages(data as Message[])
+    }
+
     setChatDialogOpen(true)
   }
 
@@ -387,11 +301,14 @@ export default function RequestDetailPage() {
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <Clock className="h-4 w-4" />
-                      {request.time}
+                      {formatDistanceToNow(new Date(request.created_at), {
+                        addSuffix: true,
+                        locale: ko,
+                      })}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <User className="h-4 w-4" />
-                      {request.author}
+                      {request.profiles?.username || "사용자"}
                     </span>
                   </div>
                 </CardHeader>
@@ -405,21 +322,24 @@ export default function RequestDetailPage() {
               {/* Proposals Section */}
               <div className="mt-6">
                 <h2 className="mb-4 text-lg font-semibold text-foreground">
-                  받은 제안 ({allProposals.length}건)
+                  받은 제안 ({proposals.length}건)
                 </h2>
-                {allProposals.length > 0 ? (
+                {proposals.length > 0 ? (
                   <div className="space-y-3">
-                    {allProposals.map((proposal) => (
+                    {proposals.map((proposal) => (
                       <Card key={proposal.id}>
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold text-foreground">
-                                  {proposal.providerName}
+                                  {proposal.profiles?.username || "서비스 제공자"}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  {proposal.createdAt}
+                                  {formatDistanceToNow(
+                                    new Date(proposal.created_at),
+                                    { addSuffix: true, locale: ko }
+                                  )}
                                 </span>
                               </div>
                               <p className="mt-2 text-sm text-muted-foreground">
@@ -521,6 +441,7 @@ export default function RequestDetailPage() {
                         <Button
                           className="w-full"
                           onClick={handleSubmitProposal}
+                          disabled={!user}
                         >
                           <CheckCircle className="mr-2 h-4 w-4" />
                           제안서 보내기 (무료)
@@ -548,11 +469,11 @@ export default function RequestDetailPage() {
             <DialogHeader className="border-b border-border px-4 py-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <DialogTitle className="text-base">
-                    {selectedProposal?.providerName}
+                  <DialogTitle className="text-base font-semibold">
+                    {selectedProposal?.profiles?.username || "서비스 제공자"}
                   </DialogTitle>
-                  <DialogDescription className="text-xs">
-                    Encrypted / Zero-Fee
+                  <DialogDescription className="text-xs font-mono">
+                    {selectedProposal?.price} / {selectedProposal?.contact}
                   </DialogDescription>
                 </div>
                 <Badge
@@ -574,62 +495,41 @@ export default function RequestDetailPage() {
               </div>
               <div className="space-y-4">
                 {chatMessages.map((msg) => (
-                  <div key={msg.id}>
-                    {msg.sender === "system" ? (
-                      <div className="flex justify-center">
-                        <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                          {msg.message}
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.sender_id === user?.id ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[80%] ${msg.sender_id === user?.id ? "order-2" : ""}`}
+                    >
+                      <div className="mb-1 flex items-center gap-2">
+                        {msg.sender_id !== user?.id && (
+                          <div className="h-8 w-8 rounded-full bg-muted" />
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {msg.sender_id === user?.id
+                            ? "나"
+                            : msg.profiles?.username || "상대방"}
                         </span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(msg.created_at).toLocaleTimeString("ko-KR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {msg.sender_id === user?.id && (
+                          <div className="h-8 w-8 rounded-full bg-primary/20" />
+                        )}
                       </div>
-                    ) : (
                       <div
-                        className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
+                        className={`rounded-lg px-4 py-3 ${msg.sender_id === user?.id
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border bg-background"
+                          }`}
                       >
-                        <div
-                          className={`max-w-[80%] ${msg.sender === "me" ? "order-2" : ""}`}
-                        >
-                          <div className="mb-1 flex items-center gap-2">
-                            {msg.sender !== "me" && (
-                              <div className="h-8 w-8 rounded-full bg-muted" />
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              {msg.senderName}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {msg.time}
-                            </span>
-                            {msg.sender === "me" && (
-                              <div className="h-8 w-8 rounded-full bg-primary/20" />
-                            )}
-                          </div>
-                          <div
-                            className={`rounded-lg px-4 py-3 ${
-                              msg.sender === "me"
-                                ? "bg-primary text-primary-foreground"
-                                : "border border-border bg-background"
-                            }`}
-                          >
-                            {msg.isProposal && msg.proposalData ? (
-                              <div className="space-y-2">
-                                <p className="text-sm">{msg.message}</p>
-                                <div className="mt-3 rounded border border-border/50 bg-background/50 p-2">
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <span className={msg.sender === "me" ? "text-primary-foreground/70" : "text-muted-foreground"}>예상 비용:</span>
-                                    <span className="font-semibold">{msg.proposalData.price}</span>
-                                  </div>
-                                  <div className="mt-1 flex items-center gap-2 text-xs">
-                                    <span className={msg.sender === "me" ? "text-primary-foreground/70" : "text-muted-foreground"}>연락처:</span>
-                                    <span className="font-mono">{msg.proposalData.contact}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <p className="text-sm">{msg.message}</p>
-                            )}
-                          </div>
-                        </div>
+                        <p className="text-sm">{msg.message}</p>
                       </div>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>
