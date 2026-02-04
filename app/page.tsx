@@ -1,103 +1,105 @@
-import Image from "next/image";
+import Link from "next/link"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { ArrowRight, PenTool, MessageCircle, Wallet } from "lucide-react"
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="flex min-h-screen flex-col">
+      <Header />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="px-4 py-16 md:py-24">
+          <div className="container mx-auto text-center">
+            <h1 className="mx-auto max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-foreground md:text-4xl lg:text-5xl text-balance">
+              수수료 뒤에 숨지 마세요.
+              <br />
+              100% 무료 직거래.
+            </h1>
+            <p className="mx-auto mt-6 max-w-xl text-muted-foreground md:text-lg text-pretty">
+              오픈소스로 만들어진 투명한 공간. 누구나 비용 0원.
+            </p>
+            <div className="mt-10">
+              <Button asChild size="lg" className="gap-2 text-base">
+                <Link href="/requests/new">
+                  지금 바로 시작하기
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Service Process Section */}
+        <section className="border-t border-border px-4 py-16 md:py-24">
+          <div className="container mx-auto">
+            <div className="text-center">
+              <span className="inline-block rounded-full border border-border px-4 py-1.5 text-sm font-medium text-muted-foreground">
+                Service Process
+              </span>
+              <h2 className="mt-4 text-2xl font-bold text-foreground md:text-3xl">
+                서비스 이용 방법
+              </h2>
+              <p className="mx-auto mt-4 max-w-lg text-muted-foreground text-pretty">
+                복잡한 과정 없이 깔끔하고 투명하게. 숨지마는 이렇게 작동합니다.
+              </p>
+            </div>
+
+            {/* Features Grid */}
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
+              <Card className="border-border bg-background transition-colors hover:border-muted-foreground/30">
+                <CardContent className="flex flex-col items-center p-8 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                    <PenTool className="h-6 w-6 text-foreground" />
+                  </div>
+                  <h3 className="mt-6 text-lg font-semibold text-foreground">
+                    요청서 작성
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-foreground text-pretty">
+                    원하는 서비스를 구체적으로 작성하여 요청하세요. 별도의
+                    가입비는 없습니다.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border bg-background transition-colors hover:border-muted-foreground/30">
+                <CardContent className="flex flex-col items-center p-8 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                    <MessageCircle className="h-6 w-6 text-foreground" />
+                  </div>
+                  <h3 className="mt-6 text-lg font-semibold text-foreground">
+                    직거래 제안
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-foreground text-pretty">
+                    서비스 제공자가 직접 견적을 제안합니다. 프로필을 확인하고
+                    선택하세요.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border bg-background transition-colors hover:border-muted-foreground/30">
+                <CardContent className="flex flex-col items-center p-8 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                    <Wallet className="h-6 w-6 text-foreground" />
+                  </div>
+                  <h3 className="mt-6 text-lg font-semibold text-foreground">
+                    수수료 0원
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-foreground text-pretty">
+                    매칭 수수료, 중개 수수료 없이 100% 무료입니다. 부담없이
+                    이용하세요.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      <Footer />
     </div>
-  );
+  )
 }
