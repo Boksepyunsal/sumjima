@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 숨지마 (Sumjima)
 
-## Getting Started
+> **"실력 있는 당신, 가혹한 수수료 뒤에 숨지 마세요."**
+> 견적 비용과 매칭 수수료를 걷어낸, 모두를 위한 **수수료 0원** 오픈소스 서비스 매칭 플랫폼입니다.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 💡 Why? (우리가 시작한 이유)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+현재의 서비스 중개 시장은 '연결'을 대가로 서비스 제공자에게 가혹한 비용을 요구합니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* **고수의 독박 과금**: 견적서를 발송할 때마다 비용이 들고, 매칭에 실패해도 환불받기 어렵습니다.
+* **불투명한 연결**: 플랫폼의 수익을 위해 전문가와 요청자 사이의 직접적인 소통을 가로막습니다.
+* **성장의 한계**: 높은 수수료는 결국 서비스 품질 저하나 가격 상승으로 이어져 사용자 모두에게 피해를 줍니다.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+우리는 IT 외주, 홈클리닝, 전문 상담, 과외 등 **분야를 가리지 않고** 모든 재능이 공정하게 연결되는 세상을 꿈꿉니다. '복잡한 세상 편하게 살자'는 **복세편살(Boksepyeonsal)**의 철학을 담아, 연결의 문턱을 완전히 없애고자 합니다.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🎯 프로젝트 목적 (Our Mission)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **연결의 무료화**: 견적 발송비와 중개 수수료를 0원으로 유지하여 제공자의 부담을 없앱니다.
+2. **보편적 매칭 플랫폼**: 특정 카테고리에 국한되지 않고, 누구나 필요에 따라 서비스를 정의하고 제안할 수 있는 범용 플랫폼을 지향합니다.
+3. **오픈소스 기반의 투명성**: 플랫폼이 규칙을 독점하지 않습니다. 커뮤니티가 직접 카테고리를 관리하고 기능을 개선하는 '자율 주행형' 서비스를 만듭니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🛠 주요 핵심 기능 (MVP)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+* **심플 요청서**: 지역 태그와 카테고리를 기반으로 누구나 1분 만에 요청을 등록합니다.
+* **무제한 제안**: 제공자는 비용 걱정 없이 자신의 포트폴리오와 연락처(오픈채팅 등)를 남길 수 있습니다.
+* **직접 결제 유도**: 플랫폼 내부 결제 강요 없이, 당근마켓처럼 사용자가 편리한 방식으로 직접 거래하도록 유도합니다.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 💻 Tech Stack
+
+1인 개발로 시작해 누구나 쉽게 기여할 수 있는 효율적인 스택을 선택했습니다.
+
+* **Frontend**: `Next.js (App Router)`
+* **Backend/DB**: `Supabase (PostgreSQL)`
+* **UI Library**: `Tailwind CSS` + `shadcn/ui`
+* **Deployment**: `Vercel`
+
+---
+
+## 🤝 Contribution (함께 만드는 법)
+
+**숨지마**는 오픈소스 프로젝트입니다. 여러분의 기여가 불공정한 플랫폼 시장을 바꾸는 씨앗이 됩니다.
+
+* **개발자**: Supabase Realtime을 이용한 실시간 채팅, 지역 기반 필터링 고도화.
+* **기획자/사용자**: 노무, 상담, 이사, 청소 등 각 분야에 필요한 요청서 양식(JSON) 기여.
+* **누구나**: 버그 제보나 '별(⭐)' 클릭으로 이 프로젝트의 가치를 널리 알려주세요!
+
+---
+
+## 📜 License
+
+이 프로젝트는 **MIT License**를 따릅니다. 누구나 자유롭게 가져가서 자신만의 특화된 매칭 서비스를 만들 수 있습니다.
