@@ -34,7 +34,9 @@ export function Header() {
       } else {
         setProfile(null)
       }
-      router.refresh()
+      // Vercel 배포 환경에서 로그인 후 페이지 이동 시 인증 상태가 풀리는 이슈로 인해
+      // router.refresh()를 주석 처리하여 클라이언트 측 상태가 일관되게 유지되도록 합니다.
+      // router.refresh()
     })
 
     return () => subscription.unsubscribe()
