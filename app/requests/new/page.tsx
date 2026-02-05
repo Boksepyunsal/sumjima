@@ -1,7 +1,7 @@
 "use client"
 
 import { createClient } from "@/lib/supabase/client"
-import type { SupabaseClient, User } from "@supabase/supabase-js"
+import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
 import React, { useEffect } from "react"
 
@@ -27,7 +27,7 @@ export default function NewRequestPage() {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [user, setUser] = useState<User | null>(null)
-  const supabase: SupabaseClient<Database> = createClient()
+  const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function NewRequestPage() {
 
     const { error } = await supabase
       .from("requests")
-      .insert([requestToInsert])
+      .insert(requestToInsert as any)
 
     if (error) {
       console.error("Error creating request:", error)

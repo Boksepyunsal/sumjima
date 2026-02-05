@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Database } from "@/lib/database.types"
 import { createClient } from "@/lib/supabase/client"
-import type { SupabaseClient, User as SupabaseUser } from "@supabase/supabase-js"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
 import {
@@ -46,7 +46,7 @@ type Message = Database["public"]["Tables"]["messages"]["Row"] & {
 export default function RequestDetailPage() {
   const params = useParams()
   const requestId = params.id as string
-  const supabase: SupabaseClient<Database> = createClient()
+  const supabase = createClient()
   const router = useRouter()
 
   const [request, setRequest] = useState<RequestDetails | null>(null)
@@ -190,7 +190,7 @@ export default function RequestDetailPage() {
 
     const { error } = await supabase
       .from("messages")
-      .insert([messageToInsert])
+      .insert(messageToInsert as any)
 
     if (error) {
       alert("메시지 전송에 실패했습니다.")
@@ -225,7 +225,7 @@ export default function RequestDetailPage() {
 
     const { data: newProposal, error } = await supabase
       .from("proposals")
-      .insert([proposalToInsert])
+      .insert(proposalToInsert as any)
       .select(`*, profiles ( username )`)
       .single()
 
