@@ -1,8 +1,7 @@
 "use client"
 
+import { useSupabase } from "@/components/supabase-provider"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
-import type { User } from "@supabase/supabase-js"
 import { LogOut, Menu } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -10,20 +9,14 @@ import { useEffect, useState } from "react"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
+  const { supabase, user } = useSupabase()
   const [profile, setProfile] = useState<{ username: string | null } | null>(
     null
   )
-  const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const user = session?.user ?? null
-      setUser(user)
-
+    const fetchProfile = async () => {
       if (user) {
         const { data: profileData } = await supabase
           .from("profiles")
@@ -34,13 +27,9 @@ export function Header() {
       } else {
         setProfile(null)
       }
-      // Vercel 배포 환경에서 로그인 후 페이지 이동 시 인증 상태가 풀리는 이슈로 인해
-      // router.refresh()를 주석 처리하여 클라이언트 측 상태가 일관되게 유지되도록 합니다.
-      // router.refresh()
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase, router])
+    }
+    fetchProfile()
+  }, [user, supabase])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()

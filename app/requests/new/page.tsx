@@ -1,12 +1,11 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/client"
-import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
 import React, { useEffect } from "react"
 
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
+import { useSupabase } from "@/components/supabase-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,33 +25,24 @@ export default function NewRequestPage() {
   const [region, setRegion] = useState("")
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [user, setUser] = useState<User | null>(null)
-  const supabase = createClient()
+  const { supabase, user, isLoading } = useSupabase()
   const router = useRouter()
 
   useEffect(() => {
-    let ignore = false
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!ignore) {
-        if (!user) {
-          alert("로그인이 필요합니다.")
-          router.push("/login")
-        } else {
-          setUser(user)
-        }
-      }
+    // 인증 상태 로딩이 끝나면 사용자 정보를 확인합니다.
+    if (isLoading) {
+      return
     }
-    getUser()
-    return () => {
-      ignore = true
+    if (!user) {
+      alert("로그인이 필요합니다.")
+      router.push("/login")
     }
-  }, [supabase, router])
+  }, [user, isLoading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // 이제 user 객체는 항상 최신 상태를 보장합니다.
     if (!user) {
       alert("로그인이 필요합니다.")
       return
@@ -76,6 +66,19 @@ export default function NewRequestPage() {
       alert("요청서가 성공적으로 등록되었습니다.")
       router.push("/requests")
     }
+  }
+
+  // 인증 상태를 확인하는 동안 로딩 화면을 보여줍니다.
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex flex-1 items-center justify-center">
+          <p className="text-muted-foreground">사용자 정보를 확인하는 중...</p>
+        </main>
+        <Footer />
+      </div>
+    )
   }
 
   return (
