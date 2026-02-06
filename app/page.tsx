@@ -3,7 +3,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, PenTool, MessageCircle, Wallet } from 'lucide-react';
+import { ArrowRight, PenTool, MessageCircle, Wallet } from 'lucide-react'; 
 
 export default function LandingPage() {
   return (
@@ -38,7 +38,7 @@ export default function LandingPage() {
           <div className="container mx-auto">
             <div className="text-center">
               <span className="inline-block rounded-full border border-border px-4 py-1.5 text-sm font-medium text-muted-foreground">
-                Service Process
+                Service Process (Updated)
               </span>
               <h2 className="mt-4 text-2xl font-bold text-foreground md:text-3xl">
                 서비스 이용 방법
