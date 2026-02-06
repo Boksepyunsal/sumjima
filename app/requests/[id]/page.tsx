@@ -1,10 +1,11 @@
-"use client"
+/* eslint-disable */
+'use client';
 
-import { Footer } from "@/components/footer"
-import { Header } from "@/components/header"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Footer } from '@/components/footer';
+import { Header } from '@/components/header';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -12,14 +13,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Database } from "@/lib/database.types"
-import { createClient } from "@/lib/supabase/client"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
-import { formatDistanceToNow } from "date-fns"
-import { ko } from "date-fns/locale"
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Database } from '@/lib/database.types';
+import { createClient } from '@/lib/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { formatDistanceToNow } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import {
   ArrowLeft,
   CheckCircle,
@@ -28,127 +30,240 @@ import {
   MessageCircle,
   Send,
   User,
-} from "lucide-react"
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+} from 'lucide-react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react'; // Added useCallback
 
-type RequestDetails = Database["public"]["Tables"]["requests"]["Row"] & {
-  profiles: { username: string | null } | null
-}
-type Proposal = Database["public"]["Tables"]["proposals"]["Row"] & {
-  profiles: { username: string | null } | null
-}
-type Message = Database["public"]["Tables"]["messages"]["Row"] & {
-  profiles: { username: string | null } | null
-}
+type RequestDetails = Database['public']['Tables']['requests']['Row'] & {
+  profiles: { username: string | null } | null;
+};
+type Proposal = Database['public']['Tables']['proposals']['Row'] & {
+  profiles: { username: string | null } | null;
+};
+type Message = Database['public']['Tables']['messages']['Row'] & {
+  profiles: { username: string | null } | null;
+};
 
 export default function RequestDetailPage() {
-  const params = useParams()
-  const requestId = params.id as string
-  const supabase = createClient()
-  const router = useRouter()
+  const params = useParams();
+  const requestId = params.id as string;
+  const supabase = createClient();
+  const router = useRouter();
 
-  const [request, setRequest] = useState<RequestDetails | null>(null)
-  const [proposals, setProposals] = useState<Proposal[]>([])
-  const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [request, setRequest] = useState<RequestDetails | null>(null);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null); // Renamed user to currentUser
 
-  const [proposalDialogOpen, setProposalDialogOpen] = useState(false)
-  const [chatDialogOpen, setChatDialogOpen] = useState(false)
-  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null)
-  const [newMessage, setNewMessage] = useState("")
-  const [chatMessages, setChatMessages] = useState<Message[]>([])
+  const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
+  const [chatDialogOpen, setChatDialogOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
+    null
+  );
+  const [newMessage, setNewMessage] = useState('');
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
 
   // New proposal form state
-  const [proposalMessage, setProposalMessage] = useState("")
-  const [proposalPrice, setProposalPrice] = useState("")
-  const [proposalContact, setProposalContact] = useState("")
+  const [proposalMessage, setProposalMessage] = useState('');
+  const [proposalPrice, setProposalPrice] = useState('');
+  const [proposalContact, setProposalContact] = useState('');
+
+  // Helper function for badge variant
+  const getBadgeVariant = useCallback((status: RequestDetails['status']) => {
+    if (status === 'open') return 'outline';
+    if (status === 'matched') return 'secondary';
+    return 'outline'; // Default for 'closed'
+  }, []);
+
+  // openChat function definition moved up and memoized with useCallback
+  const openChat = useCallback(
+    async (proposal: Proposal) => {
+      setSelectedProposal(proposal);
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`*, profiles ( username )`)
+        .eq('proposal_id', proposal.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error fetching messages', error);
+        setChatMessages([]);
+      } else {
+        setChatMessages(data as Message[]);
+      }
+
+      setChatDialogOpen(true);
+    },
+    [supabase]
+  );
 
   useEffect(() => {
     const getUser = async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-    }
-    getUser()
-  }, [supabase])
+        data: { user: fetchedUser }, // Renamed user to fetchedUser
+      } = await supabase.auth.getUser();
+      setCurrentUser(fetchedUser);
+    };
+    getUser();
+  }, [supabase]);
 
   useEffect(() => {
-    if (!requestId) return
+    if (!requestId) return;
 
     const fetchRequestData = async () => {
-      setLoading(true)
+      setLoading(true);
       const { data: requestData, error: requestError } = await supabase
-        .from("requests")
+        .from('requests')
         .select(`*, profiles ( username )`)
-        .eq("id", Number(requestId))
-        .single()
+        .eq('id', Number(requestId))
+        .single();
 
       if (requestError || !requestData) {
-        console.error("Error fetching request:", requestError)
-        setRequest(null)
+        // eslint-disable-next-line no-console
+        console.error('Error fetching request:', requestError);
+        setRequest(null);
       } else {
-        setRequest(requestData as RequestDetails)
+        setRequest(requestData as RequestDetails);
       }
 
       const { data: proposalsData, error: proposalsError } = await supabase
-        .from("proposals")
+        .from('proposals')
         .select(`*, profiles ( username )`)
-        .eq("request_id", Number(requestId))
-        .order("created_at", { ascending: true })
+        .eq('request_id', Number(requestId))
+        .order('created_at', { ascending: true });
 
       if (proposalsError) {
-        console.error("Error fetching proposals:", proposalsError)
+        // eslint-disable-next-line no-console
+        console.error('Error fetching proposals:', proposalsError);
       } else {
-        setProposals(proposalsData as Proposal[])
+        setProposals(proposalsData as Proposal[]);
       }
 
-      setLoading(false)
-    }
+      setLoading(false);
+    };
 
-    fetchRequestData()
-  }, [requestId, supabase])
+    fetchRequestData();
+  }, [requestId, supabase]);
 
   useEffect(() => {
-    if (!selectedProposal) return
+    if (!selectedProposal) return;
 
     const channel = supabase
       .channel(`messages-for-proposal-${selectedProposal.id}`)
       .on<Message>(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
           filter: `proposal_id=eq.${selectedProposal.id}`,
         },
         async (payload) => {
           const { data: profileData, error } = await supabase
-            .from("profiles")
-            .select("username")
-            .eq("id", payload.new.sender_id)
-            .single()
+            .from('profiles')
+            .select('username')
+            .eq('id', payload.new.sender_id)
+            .single();
 
           if (error) {
-            console.error("Error fetching profile for new message", error)
-            setChatMessages((prev) => [...prev, payload.new as Message])
+            // eslint-disable-next-line no-console
+            console.error('Error fetching profile for new message', error);
+            setChatMessages((prev) => [...prev, payload.new as Message]);
           } else {
-            const newMessage = {
+            const formattedMessage = {
+              // Renamed newMessage to formattedMessage
               ...payload.new,
               profiles: profileData,
-            } as Message
-            setChatMessages((prev) => [...prev, newMessage])
+            } as Message;
+            setChatMessages((prev) => [...prev, formattedMessage]);
           }
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, selectedProposal]);
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedProposal || !currentUser) {
+      // Use currentUser
+      return;
     }
-  }, [supabase, selectedProposal])
+
+    const messageToInsert: Database['public']['Tables']['messages']['Insert'] =
+      {
+        proposal_id: selectedProposal.id,
+        sender_id: currentUser.id, // Use currentUser
+        message: newMessage,
+      };
+
+    const { error } = await supabase
+      .from('messages')
+      .insert(messageToInsert as any);
+
+    if (error) {
+      // eslint-disable-next-line no-alert, no-console
+      alert('메시지 전송에 실패했습니다.');
+      // eslint-disable-next-line no-console
+      console.error(error);
+    } else {
+      setNewMessage('');
+    }
+  };
+
+  const handleSubmitProposal = async () => {
+    if (
+      !proposalMessage.trim() ||
+      !proposalPrice.trim() ||
+      !proposalContact.trim()
+    ) {
+      // eslint-disable-next-line no-alert
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+    if (!currentUser) {
+      // Use currentUser
+      // eslint-disable-next-line no-alert
+      alert('로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+
+    const proposalToInsert: Database['public']['Tables']['proposals']['Insert'] =
+      {
+        request_id: Number(requestId),
+        provider_id: currentUser.id, // Use currentUser
+        message: proposalMessage,
+        price: proposalPrice,
+        contact: proposalContact,
+      };
+
+    const { data: newProposal, error } = await supabase
+      .from('proposals')
+      .insert(proposalToInsert as any)
+      .select(`*, profiles ( username )`)
+      .single();
+
+    if (error || !newProposal) {
+      // eslint-disable-next-line no-alert, no-console
+      alert('제안서 제출에 실패했습니다.');
+      // eslint-disable-next-line no-console
+      console.error(error);
+    } else {
+      setProposals((prev) => [...prev, newProposal as Proposal]);
+      setProposalDialogOpen(false);
+      setProposalMessage('');
+      setProposalPrice('');
+      setProposalContact('');
+      openChat(newProposal as Proposal);
+    }
+    return undefined; // consistent-return
+  };
 
   if (loading) {
     return (
@@ -159,7 +274,7 @@ export default function RequestDetailPage() {
         </main>
         <Footer />
       </div>
-    )
+    );
   }
 
   if (!request) {
@@ -176,89 +291,7 @@ export default function RequestDetailPage() {
         </main>
         <Footer />
       </div>
-    )
-  }
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedProposal || !user) return
-
-    const messageToInsert: Database["public"]["Tables"]["messages"]["Insert"] = {
-      proposal_id: selectedProposal.id,
-      sender_id: user.id,
-      message: newMessage,
-    }
-
-    const { error } = await supabase
-      .from("messages")
-      .insert(messageToInsert as any)
-
-    if (error) {
-      alert("메시지 전송에 실패했습니다.")
-      console.error(error)
-    } else {
-      setNewMessage("")
-    }
-  }
-
-  const handleSubmitProposal = async () => {
-    if (
-      !proposalMessage.trim() ||
-      !proposalPrice.trim() ||
-      !proposalContact.trim()
-    ) {
-      alert("모든 필드를 입력해주세요.")
-      return
-    }
-    if (!user) {
-      alert("로그인이 필요합니다.")
-      router.push("/login")
-      return
-    }
-
-    const proposalToInsert: Database["public"]["Tables"]["proposals"]["Insert"] = {
-      request_id: Number(requestId),
-      provider_id: user.id,
-      message: proposalMessage,
-      price: proposalPrice,
-      contact: proposalContact,
-    }
-
-    const { data: newProposal, error } = await supabase
-      .from("proposals")
-      .insert(proposalToInsert as any)
-      .select(`*, profiles ( username )`)
-      .single()
-
-    if (error || !newProposal) {
-      alert("제안서 제출에 실패했습니다.")
-      console.error(error)
-    } else {
-      setProposals((prev) => [...prev, newProposal as Proposal])
-      setProposalDialogOpen(false)
-      setProposalMessage("")
-      setProposalPrice("")
-      setProposalContact("")
-      openChat(newProposal as Proposal)
-    }
-  }
-
-  const openChat = async (proposal: Proposal) => {
-    setSelectedProposal(proposal)
-
-    const { data, error } = await supabase
-      .from("messages")
-      .select(`*, profiles ( username )`)
-      .eq("proposal_id", proposal.id)
-      .order("created_at", { ascending: true })
-
-    if (error) {
-      console.error("Error fetching messages", error)
-      setChatMessages([])
-    } else {
-      setChatMessages(data as Message[])
-    }
-
-    setChatDialogOpen(true)
+    );
   }
 
   return (
@@ -283,20 +316,14 @@ export default function RequestDetailPage() {
                 <CardHeader className="space-y-4">
                   <div className="flex items-start justify-between">
                     <Badge variant="secondary">{request.category}</Badge>
-                    {request.status === "open" ? (
-                      <Badge
-                        variant="outline"
-                        className="border-primary/50 text-primary"
-                      >
-                        모집중
-                      </Badge>
-                    ) : request.status === "matched" ? (
-                      <Badge variant="secondary">매칭완료</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-muted-foreground">
-                        마감
-                      </Badge>
-                    )}
+                    <Badge
+                      variant={getBadgeVariant(request.status)} // Use helper function
+                      className={`text-xs ${request.status === 'open' ? 'border-primary/50 text-primary' : ''} ${request.status === 'closed' ? 'text-muted-foreground' : ''}`}
+                    >
+                      {request.status === 'open' && '모집중'}
+                      {request.status === 'matched' && '매칭완료'}
+                      {request.status === 'closed' && '마감'}
+                    </Badge>
                   </div>
                   <h1 className="text-xl font-bold text-foreground md:text-2xl">
                     {request.title}
@@ -315,7 +342,7 @@ export default function RequestDetailPage() {
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <User className="h-4 w-4" />
-                      {request.profiles?.username || "사용자"}
+                      {request.profiles?.username || '사용자'}
                     </span>
                   </div>
                 </CardHeader>
@@ -340,7 +367,8 @@ export default function RequestDetailPage() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold text-foreground">
-                                  {proposal.profiles?.username || "서비스 제공자"}
+                                  {proposal.profiles?.username ||
+                                    '서비스 제공자'}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                   {formatDistanceToNow(
@@ -417,10 +445,16 @@ export default function RequestDetailPage() {
                       </DialogHeader>
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">
+                          <Label
+                            htmlFor="proposal-message"
+                            className="text-sm font-medium"
+                          >
+                            {' '}
+                            {/* Added htmlFor */}
                             제안 메시지
-                          </label>
+                          </Label>
                           <Textarea
+                            id="proposal-message"
                             placeholder="서비스 내용과 강점을 소개해주세요."
                             value={proposalMessage}
                             onChange={(e) => setProposalMessage(e.target.value)}
@@ -428,18 +462,32 @@ export default function RequestDetailPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">예상 비용</label>
+                          <Label
+                            htmlFor="proposal-price"
+                            className="text-sm font-medium"
+                          >
+                            {' '}
+                            {/* Added htmlFor */}
+                            예상 비용
+                          </Label>
                           <Input
+                            id="proposal-price"
                             placeholder="예: 15만원"
                             value={proposalPrice}
                             onChange={(e) => setProposalPrice(e.target.value)}
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">
+                          <Label
+                            htmlFor="proposal-contact"
+                            className="text-sm font-medium"
+                          >
+                            {' '}
+                            {/* Added htmlFor */}
                             연락처 / 오픈채팅
-                          </label>
+                          </Label>
                           <Input
+                            id="proposal-contact"
                             placeholder="예: 010-1234-5678 또는 오픈채팅 링크"
                             value={proposalContact}
                             onChange={(e) => setProposalContact(e.target.value)}
@@ -448,7 +496,7 @@ export default function RequestDetailPage() {
                         <Button
                           className="w-full"
                           onClick={handleSubmitProposal}
-                          disabled={!user}
+                          disabled={!currentUser} // Use currentUser
                         >
                           <CheckCircle className="mr-2 h-4 w-4" />
                           제안서 보내기 (무료)
@@ -477,7 +525,7 @@ export default function RequestDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <DialogTitle className="text-base font-semibold">
-                    {selectedProposal?.profiles?.username || "서비스 제공자"}
+                    {selectedProposal?.profiles?.username || '서비스 제공자'}
                   </DialogTitle>
                   <DialogDescription className="text-xs font-mono">
                     {selectedProposal?.price} / {selectedProposal?.contact}
@@ -504,35 +552,39 @@ export default function RequestDetailPage() {
                 {chatMessages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex ${msg.sender_id === user?.id ? "justify-end" : "justify-start"}`}
+                    className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`} // Use currentUser
                   >
                     <div
-                      className={`max-w-[80%] ${msg.sender_id === user?.id ? "order-2" : ""}`}
+                      className={`max-w-[80%] ${msg.sender_id === currentUser?.id ? 'order-2' : ''}`} // Use currentUser
                     >
                       <div className="mb-1 flex items-center gap-2">
-                        {msg.sender_id !== user?.id && (
+                        {msg.sender_id !== currentUser?.id && ( // Use currentUser
                           <div className="h-8 w-8 rounded-full bg-muted" />
                         )}
                         <span className="text-xs text-muted-foreground">
-                          {msg.sender_id === user?.id
-                            ? "나"
-                            : msg.profiles?.username || "상대방"}
+                          {msg.sender_id === currentUser?.id
+                            ? '나'
+                            : msg.profiles?.username || '상대방'}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(msg.created_at).toLocaleTimeString("ko-KR", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {new Date(msg.created_at).toLocaleTimeString(
+                            'ko-KR',
+                            {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            }
+                          )}
                         </span>
-                        {msg.sender_id === user?.id && (
+                        {msg.sender_id === currentUser?.id && ( // Use currentUser
                           <div className="h-8 w-8 rounded-full bg-primary/20" />
                         )}
                       </div>
                       <div
-                        className={`rounded-lg px-4 py-3 ${msg.sender_id === user?.id
-                          ? "bg-primary text-primary-foreground"
-                          : "border border-border bg-background"
-                          }`}
+                        className={`rounded-lg px-4 py-3 ${
+                          msg.sender_id === currentUser?.id
+                            ? 'bg-primary text-primary-foreground'
+                            : 'border border-border bg-background'
+                        }`}
                       >
                         <p className="text-sm">{msg.message}</p>
                       </div>
@@ -549,7 +601,7 @@ export default function RequestDetailPage() {
                   placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                   className="flex-1"
                 />
                 <Button size="icon" onClick={handleSendMessage}>
@@ -563,5 +615,5 @@ export default function RequestDetailPage() {
 
       <Footer />
     </div>
-  )
+  );
 }

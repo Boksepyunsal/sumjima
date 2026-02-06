@@ -1,40 +1,45 @@
-"use client"
+'use client';
 
-import { useSupabase } from "@/components/supabase-provider"
-import { Button } from "@/components/ui/button"
-import { LogOut, Menu } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useSupabase } from '@/components/supabase-provider';
+import { Button } from '@/components/ui/button';
+import { LogOut, Menu } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { supabase, user } = useSupabase()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { supabase, user } = useSupabase();
   const [profile, setProfile] = useState<{ username: string | null } | null>(
     null
-  )
-  const router = useRouter()
+  );
+  const router = useRouter();
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (user) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("username")
-          .eq("id", user.id)
-          .single()
-        setProfile(profileData)
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+        if (error) {
+          // eslint-disable-next-line no-console
+          console.error('Error fetching profile:', error);
+        } else {
+          setProfile(profileData);
+        }
       } else {
-        setProfile(null)
+        setProfile(null);
       }
-    }
-    fetchProfile()
-  }, [user, supabase])
+    };
+    fetchProfile();
+  }, [user, supabase]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push("/")
-  }
+    await supabase.auth.signOut();
+    router.push('/');
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -68,10 +73,15 @@ export function Header() {
               <span className="text-sm text-muted-foreground">
                 {profile?.username ?? user.email}
               </span>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                type="button"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 로그아웃
-              </Button>
+              </Button>{' '}
             </>
           ) : (
             <Link
@@ -91,6 +101,7 @@ export function Header() {
           className="flex items-center justify-center p-2 md:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="메뉴 열기"
+          type="button"
         >
           <Menu className="h-6 w-6 text-foreground" />
         </button>
@@ -108,7 +119,11 @@ export function Header() {
               요청 목록
             </Link>
             {user ? (
-              <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="w-full justify-start"
+              >
                 로그아웃
               </Button>
             ) : (
@@ -121,7 +136,10 @@ export function Header() {
               </Link>
             )}
             <Button asChild className="w-full">
-              <Link href="/requests/new" onClick={() => setMobileMenuOpen(false)}>
+              <Link
+                href="/requests/new"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 견적 요청하기
               </Link>
             </Button>
@@ -129,5 +147,5 @@ export function Header() {
         </nav>
       )}
     </header>
-  )
+  );
 }

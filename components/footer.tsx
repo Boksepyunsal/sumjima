@@ -1,5 +1,5 @@
-import { Github } from "lucide-react"
-import Link from "next/link"
+import { Github } from 'lucide-react';
+import Link from 'next/link';
 
 export function Footer() {
   return (
@@ -24,10 +24,19 @@ export function Footer() {
           </div>
           <div className="space-y-2 text-sm text-muted-foreground md:col-span-2 md:text-right">
             <div className="space-x-4">
-              <Link href="/terms" className="hover:text-foreground">이용약관</Link>
-              <Link href="/privacy" className="font-semibold hover:text-foreground">개인정보처리방침</Link>
+              <Link href="/terms" className="hover:text-foreground">
+                이용약관
+              </Link>
+              <Link
+                href="/privacy"
+                className="font-semibold hover:text-foreground"
+              >
+                개인정보처리방침
+              </Link>
             </div>
-            <p className="pt-4">상호명: 복세편살 (Boksepyeonsal) | 대표자: 이재호</p>
+            <p className="pt-4">
+              상호명: 복세편살 (Boksepyeonsal) | 대표자: 이재호
+            </p>
             <p>사업자등록번호: 590-53-00872</p>
             <p>주소: 경기도 안산시 단원구 광덕1로 385, 301호 (C-5호실)</p>
             <p>고객센터: boksepyunsal24@gmail.com</p>
@@ -36,5 +45,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }
