@@ -2,10 +2,10 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 
 type SupabaseContextType = {
-  supabase: SupabaseClient;
+  supabase: ReturnType<typeof createClient>; // createClient 함수의 반환 타입 사용
   user: User | null;
   isLoading: boolean;
 };
