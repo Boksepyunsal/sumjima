@@ -48,8 +48,9 @@ jest.mock('@/components/ui/select', () => ({
   // Render nothing for Trigger and Value as they are purely visual in this mock
   SelectTrigger: () => null,
   SelectValue: () => null,
-  // Pass children through (SelectItems)
-  SelectContent: ({ children }: any) => <div>{children}</div>,
+  // Pass children through without adding a wrapper div to keep select > option structure valid
+  // eslint-disable-next-line react/jsx-no-useless-fragment
+  SelectContent: ({ children }: any) => <>{children}</>,
   // Render as option tag
   SelectItem: ({ value, children }: any) => (
     <option value={value}>{children}</option>
