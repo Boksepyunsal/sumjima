@@ -13,6 +13,20 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = tseslint.config(
+  {
+    ignores: [
+      'eslint.config.mjs',
+      'postcss.config.mjs',
+      'next.config.ts',
+      'jest.config.ts',
+      'jest.setup.ts',
+      '**/node_modules/**',
+      '.next/**',
+      '.husky/**',
+      '.github/**',
+      'coverage/**',
+    ],
+  },
   eslint.configs.recommended,
   // ...tseslint.configs.recommended, // Removed to avoid plugin redefinition conflict with airbnb-typescript
   ...compat.extends(
