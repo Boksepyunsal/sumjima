@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, PenTool, MessageCircle, Wallet } from 'lucide-react'; 
 
 export default function LandingPage() {
+  var airbnbViolation = 'This should fail commit';
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
