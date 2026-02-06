@@ -1,72 +1,84 @@
-"use client"
+'use client';
 
-import { useRouter } from "next/navigation"
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { Footer } from "@/components/footer"
-import { Header } from "@/components/header"
-import { useSupabase } from "@/components/supabase-provider"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Footer } from '@/components/footer';
+import { Header } from '@/components/header';
+import { useSupabase } from '@/components/supabase-provider';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Database } from "@/lib/database.types"
-import { useState } from "react"
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Database } from '@/lib/database.types';
+import { CATEGORIES, REGIONS } from '@/lib/constants';
 
 export default function NewRequestPage() {
-  const [category, setCategory] = useState("")
-  const [region, setRegion] = useState("")
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const { supabase, user, isLoading } = useSupabase()
-  const router = useRouter()
+  const [category, setCategory] = useState('');
+  const [region, setRegion] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const { supabase, user, isLoading } = useSupabase();
+  const router = useRouter();
 
   useEffect(() => {
     // 인증 상태 로딩이 끝나면 사용자 정보를 확인합니다.
     if (isLoading) {
-      return
+      return;
     }
     if (!user) {
-      alert("로그인이 필요합니다.")
-      router.push("/login")
+      // eslint-disable-next-line no-alert
+      alert('로그인이 필요합니다.');
+      router.push('/login');
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     // 이제 user 객체는 항상 최신 상태를 보장합니다.
     if (!user) {
-      alert("로그인이 필요합니다.")
-      return
+      // eslint-disable-next-line no-alert
+      alert('로그인이 필요합니다.');
+      return;
     }
     if (!category || !region || !title || !description) {
-      alert("모든 필드를 입력해주세요.")
-      return
+      // eslint-disable-next-line no-alert
+      alert('모든 필드를 입력해주세요.');
+      return;
     }
 
-    const requestToInsert: Database["public"]["Tables"]["requests"]["Insert"] =
-      { title, description, category, region, author_id: user.id }
+    const requestToInsert: Database['public']['Tables']['requests']['Insert'] =
+      {
+        title,
+        description,
+        category,
+        region,
+        author_id: user.id,
+      };
 
     const { error } = await supabase
-      .from("requests")
-      .insert(requestToInsert as any)
+      .from('requests')
+      .insert(requestToInsert as any);
 
     if (error) {
-      console.error("Error creating request:", error)
-      alert("요청서 등록에 실패했습니다.")
+      // eslint-disable-next-line no-console
+      console.error('Error creating request:', error);
+      // eslint-disable-next-line no-alert
+      alert('요청서 등록에 실패했습니다.');
     } else {
-      alert("요청서가 성공적으로 등록되었습니다.")
-      router.push("/requests")
+      // eslint-disable-next-line no-alert
+      alert('요청서가 성공적으로 등록되었습니다.');
+      router.push('/requests');
     }
-  }
+  };
 
   // 인증 상태를 확인하는 동안 로딩 화면을 보여줍니다.
   if (isLoading) {
@@ -78,7 +90,7 @@ export default function NewRequestPage() {
         </main>
         <Footer />
       </div>
-    )
+    );
   }
 
   return (
@@ -92,7 +104,8 @@ export default function NewRequestPage() {
               무료 견적 요청서 작성
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              필요한 서비스를 자세히 설명해주시면 서비스 제공자가 직접 연락드립니다.
+              필요한 서비스를 자세히 설명해주시면 서비스 제공자가 직접
+              연락드립니다.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -106,12 +119,11 @@ export default function NewRequestPage() {
                     <SelectValue placeholder="카테고리 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="이사/용달">이사/용달</SelectItem>
-                    <SelectItem value="청소">청소</SelectItem>
-                    <SelectItem value="수리/설치">수리/설치</SelectItem>
-                    <SelectItem value="인테리어">인테리어</SelectItem>
-                    <SelectItem value="철거">철거</SelectItem>
-                    <SelectItem value="기타">기타</SelectItem>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -126,16 +138,11 @@ export default function NewRequestPage() {
                     <SelectValue placeholder="지역 선택 (시/구)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="서울 마포구">서울 마포구</SelectItem>
-                    <SelectItem value="서울 강남구">서울 강남구</SelectItem>
-                    <SelectItem value="서울 서초구">서울 서초구</SelectItem>
-                    <SelectItem value="서울 송파구">서울 송파구</SelectItem>
-                    <SelectItem value="서울 종로구">서울 종로구</SelectItem>
-                    <SelectItem value="서울 용산구">서울 용산구</SelectItem>
-                    <SelectItem value="서울 기타">서울 기타</SelectItem>
-                    <SelectItem value="경기도">경기도</SelectItem>
-                    <SelectItem value="인천">인천</SelectItem>
-                    <SelectItem value="기타 지역">기타 지역</SelectItem>
+                    {REGIONS.map((reg) => (
+                      <SelectItem key={reg} value={reg}>
+                        {reg}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -179,5 +186,5 @@ export default function NewRequestPage() {
 
       <Footer />
     </div>
-  )
+  );
 }
