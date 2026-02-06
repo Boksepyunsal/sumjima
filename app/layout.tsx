@@ -1,5 +1,3 @@
-'use client';
-
 import { Analytics } from '@vercel/analytics/next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import React from 'react'; // Import React for JSX usage, though not explicitly used in this file
