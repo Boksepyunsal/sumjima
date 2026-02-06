@@ -1,6 +1,7 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable global-require */
 import '@testing-library/jest-dom';
+import 'whatwg-fetch'; // Polyfill for Request/Response
 
 // Mock TextEncoder/TextDecoder for jsdom env (required by some libraries)
 if (typeof global.TextEncoder === 'undefined') {

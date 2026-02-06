@@ -10,14 +10,13 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
-// Mock Header to avoid async updates and dependency on useSupabase logic inside Header
+// Mock Header
 jest.mock('@/components/header', () => ({
   Header: () => <div data-testid="mock-header">Header</div>,
 }));
 
 // Mock Supabase
 const mockInsert = jest.fn();
-// We don't need 'select' mock anymore since Header is mocked
 const mockFrom = jest.fn(() => ({
   insert: mockInsert,
 }));
@@ -33,23 +32,25 @@ jest.mock('@/components/supabase-provider', () => ({
   useSupabase: () => mockUseSupabase(),
 }));
 
-// Mock Radix UI Select components to simplify testing
+// Mock Radix UI Select components properly for select tag
 jest.mock('@/components/ui/select', () => ({
-  Select: ({ onValueChange, children }: any) => (
-    <div data-testid="mock-select-container">
+  Select: ({ value, onValueChange, children }: any) => (
+    <div data-testid="mock-select-wrapper">
       <select
         data-testid="mock-select"
+        value={value}
         onChange={(e) => onValueChange(e.target.value)}
       >
         {children}
       </select>
     </div>
   ),
-  SelectTrigger: ({ children }: any) => (
-    <div data-testid="select-trigger">{children}</div>
-  ),
-  SelectValue: () => <div>Select Value</div>,
+  // Render nothing for Trigger and Value as they are purely visual in this mock
+  SelectTrigger: () => null,
+  SelectValue: () => null,
+  // Pass children through (SelectItems)
   SelectContent: ({ children }: any) => <div>{children}</div>,
+  // Render as option tag
   SelectItem: ({ value, children }: any) => (
     <option value={value}>{children}</option>
   ),
@@ -88,7 +89,6 @@ describe('NewRequestPage', () => {
 
     expect(screen.getByLabelText(/제목/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/상세 내용/i)).toBeInTheDocument();
-    // Check for our mocked selects
     expect(screen.getAllByTestId('mock-select')).toHaveLength(2);
     expect(
       screen.getByRole('button', { name: /요청서 등록하기/i })
@@ -135,7 +135,6 @@ describe('NewRequestPage', () => {
 
     // 3. Select Category & Region
     const selects = screen.getAllByTestId('mock-select');
-    // Assuming order: Category is first, Region is second
     const categorySelect = selects[0];
     const regionSelect = selects[1];
 
