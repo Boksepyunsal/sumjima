@@ -51,6 +51,10 @@ export const Closed: Story = {
 };
 
 export const AllStatuses: Story = {
+  args: {
+    status: 'open',
+    offers: 0,
+  },
   render: () => (
     <div className="flex flex-wrap gap-3">
       <RequestStatusBadge status="open" offers={0} />
