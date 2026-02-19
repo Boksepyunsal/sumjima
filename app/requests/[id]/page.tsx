@@ -154,6 +154,14 @@ export default function RequestDetailPage() {
       console.error(error);
     } else {
       const typed = newProposal as Proposal;
+
+      // 제안 메시지를 채팅 첫 메시지로 자동 삽입
+      await supabase.from('messages').insert({
+        proposal_id: typed.id,
+        sender_id: currentUser.id,
+        message: proposalMessage,
+      });
+
       setProposals((prev) => [...prev, typed]);
       setProposalDialogOpen(false);
       setProposalMessage('');
@@ -318,86 +326,105 @@ export default function RequestDetailPage() {
             <div className="lg:col-span-1">
               <Card className="sticky top-24">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-foreground">
-                    서비스 제공이 가능하신가요?
-                  </h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    견적과 연락처를 제안해보세요. 수수료는 0원입니다.
-                  </p>
+                  {currentUser?.id === request.author_id ? (
+                    <>
+                      <h3 className="font-semibold text-foreground">
+                        내가 올린 요청입니다
+                      </h3>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        제안이 오면 채팅으로 소통해보세요.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="font-semibold text-foreground">
+                        서비스 제공이 가능하신가요?
+                      </h3>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        견적과 연락처를 제안해보세요. 수수료는 0원입니다.
+                      </p>
 
-                  {/* Proposal Dialog */}
-                  <Dialog
-                    open={proposalDialogOpen}
-                    onOpenChange={setProposalDialogOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button className="mt-4 w-full">
-                        <Send className="mr-2 h-4 w-4" />
-                        제안서 보내기
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>제안서 작성</DialogTitle>
-                        <DialogDescription>
-                          의뢰인에게 보낼 제안서를 작성하세요.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor="proposal-message"
-                            className="text-sm font-medium"
-                          >
-                            제안 메시지
-                          </Label>
-                          <Textarea
-                            id="proposal-message"
-                            placeholder="서비스 내용과 강점을 소개해주세요."
-                            value={proposalMessage}
-                            onChange={(e) => setProposalMessage(e.target.value)}
-                            className="min-h-[100px]"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor="proposal-price"
-                            className="text-sm font-medium"
-                          >
-                            예상 비용
-                          </Label>
-                          <Input
-                            id="proposal-price"
-                            placeholder="예: 15만원"
-                            value={proposalPrice}
-                            onChange={(e) => setProposalPrice(e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor="proposal-contact"
-                            className="text-sm font-medium"
-                          >
-                            연락처 / 오픈채팅
-                          </Label>
-                          <Input
-                            id="proposal-contact"
-                            placeholder="예: 010-1234-5678 또는 오픈채팅 링크"
-                            value={proposalContact}
-                            onChange={(e) => setProposalContact(e.target.value)}
-                          />
-                        </div>
-                        <Button
-                          className="w-full"
-                          onClick={handleSubmitProposal}
-                          disabled={!currentUser}
-                        >
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          제안서 보내기 (무료)
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                      {/* Proposal Dialog */}
+                      <Dialog
+                        open={proposalDialogOpen}
+                        onOpenChange={setProposalDialogOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button className="mt-4 w-full">
+                            <Send className="mr-2 h-4 w-4" />
+                            제안서 보내기
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>제안서 작성</DialogTitle>
+                            <DialogDescription>
+                              의뢰인에게 보낼 제안서를 작성하세요.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor="proposal-message"
+                                className="text-sm font-medium"
+                              >
+                                제안 메시지
+                              </Label>
+                              <Textarea
+                                id="proposal-message"
+                                placeholder="서비스 내용과 강점을 소개해주세요."
+                                value={proposalMessage}
+                                onChange={(e) =>
+                                  setProposalMessage(e.target.value)
+                                }
+                                className="min-h-[100px]"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor="proposal-price"
+                                className="text-sm font-medium"
+                              >
+                                예상 비용
+                              </Label>
+                              <Input
+                                id="proposal-price"
+                                placeholder="예: 15만원"
+                                value={proposalPrice}
+                                onChange={(e) =>
+                                  setProposalPrice(e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor="proposal-contact"
+                                className="text-sm font-medium"
+                              >
+                                연락처 / 오픈채팅
+                              </Label>
+                              <Input
+                                id="proposal-contact"
+                                placeholder="예: 010-1234-5678 또는 오픈채팅 링크"
+                                value={proposalContact}
+                                onChange={(e) =>
+                                  setProposalContact(e.target.value)
+                                }
+                              />
+                            </div>
+                            <Button
+                              className="w-full"
+                              onClick={handleSubmitProposal}
+                              disabled={!currentUser}
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              제안서 보내기 (무료)
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                  )}
 
                   <div className="mt-4 rounded-lg border border-border bg-muted/50 p-3">
                     <p className="text-xs text-muted-foreground">
