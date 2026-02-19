@@ -160,7 +160,7 @@ export default function RequestDetailPage() {
         proposal_id: typed.id,
         sender_id: currentUser.id,
         message: proposalMessage,
-      });
+      } as any);
 
       setProposals((prev) => [...prev, typed]);
       setProposalDialogOpen(false);
