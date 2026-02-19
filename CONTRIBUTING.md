@@ -16,6 +16,60 @@
 4.  코드를 수정하고, 커밋하기 전에 린트 검사를 실행합니다. (`npm run lint`)
 5.  수정 사항에 대한 **Pull Request(PR)**를 생성합니다. PR에는 어떤 문제를 해결했는지, 어떻게 변경했는지 명확하게 작성해주세요.
 
+## 📖 Storybook으로 컴포넌트 확인하기
+
+Storybook을 사용하면 컴포넌트를 독립적으로 개발하고 시각적으로 확인할 수 있습니다.
+
+```bash
+npm run storybook
+# http://localhost:6006 에서 확인
+```
+
+### 스토리 위치
+
+```
+stories/
+  ui/           # shadcn/ui 기반 기본 컴포넌트 (Button, Badge, Card 등)
+  layout/       # Header, Footer
+  requests/     # 요청 관련 컴포넌트
+  landing/      # 랜딩 페이지 섹션
+```
+
+### 새 컴포넌트 추가 시 스토리 작성
+
+새 컴포넌트를 추가하거나 기존 컴포넌트를 수정할 때는 해당 스토리도 함께 작성해 주세요.
+
+```tsx
+// stories/ui/MyComponent.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react';
+import { MyComponent } from '@/components/ui/my-component';
+
+const meta = {
+  title: 'UI/MyComponent',
+  component: MyComponent,
+  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: { label: '기본 상태' },
+};
+```
+
+### Auth 상태 테스트
+
+툴바의 **Auth** 토글로 로그인/로그아웃 상태를 전환하여 Header 등 인증 연동 컴포넌트를 확인할 수 있습니다.
+
+### Storybook 정적 빌드
+
+```bash
+npm run build-storybook
+# storybook-static/ 에 빌드 결과물 생성
+```
+
 ## 🌟 기여 분야
 
 ## 📝 코드 스타일 및 원칙 (Code Style & Principles)
